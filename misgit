@@ -1,0 +1,8 @@
+#!/usr/bin/env python3
+# Extract git summary info across multiple git repos below some folder (recursively)
+# tags: git
+
+from multigit import main
+
+if __name__ == "__main__":
+    main.main()
