@@ -1,0 +1,9 @@
+# pyproject.toml tells build tools (like pip and build) what is required
+# to build your project.
+[build-system]
+requires = [
+    "setuptools>=42",
+    "build",
+    "wheel",
+]
+build-backend = "setuptools.build_meta"
