@@ -1,0 +1,55 @@
+# General
+*~
+*.log
+
+# IDEs
+.idea/
+.vscode/
+
+# Python byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+
+# Python distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Python installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Python unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+coverage.xml
+*.cover
+*.py,cover
+.pytest_cache/
+cover/
+
+# Python virtual env
+.env
+.venv
+env/
+venv/
+ENV/
