@@ -27,7 +27,7 @@ def main():
     if opt.only_path:
         fields = ""
 
-    git_list_all(dirargs, excludes, fields=fields, as_diff=opt.diff)
+    git_list_all(dirargs, excludes, fields=fields, depth=opt.maxdepth, as_diff=opt.diff)
 
 
 examples = f"""Examples:
@@ -48,6 +48,8 @@ For each repo found, shows: repo path, tag, branch, status
         help=f"""Folder(s) to search for git repos. Default is current dir""")
     g.add_argument("-x", dest='exclude', metavar='DIR', type=str, action="append",
         help=f"""Exclude folder. Relative to search folders (or absolute). Can be given multiple times.""")
+    g.add_argument("-d", dest='maxdepth', metavar='NUM', type=int, default=999,
+        help=f"Max depth of search")
     g.add_argument('--diff', dest='diff', action='store_true', default=False,
         help="Compare two trees (requires two DIRectory arguments)")
 
@@ -68,7 +70,7 @@ For each repo found, shows: repo path, tag, branch, status
 #
 ################################################################################
 
-def git_list_all(dirargs, exclude=None, fields="", as_diff=False):
+def git_list_all(dirargs, exclude=None, fields="", depth=999, as_diff=False):
     if as_diff and len(dirargs) != 2:
         misc.error("Two directories are required")
         sys.exit(1)
@@ -80,7 +82,7 @@ def git_list_all(dirargs, exclude=None, fields="", as_diff=False):
             misc.error(f"Not a directory: {dirarg}")
             continue
 
-        dirpaths = find_git_repos(dirarg, exclude)
+        dirpaths = find_git_repos(dirarg, exclude, depth=depth)
         if not dirpaths:
             misc.error(f"No git repos found below {dirarg}")
             continue
@@ -156,7 +158,7 @@ def git_list_all(dirargs, exclude=None, fields="", as_diff=False):
         os.system(cmd)
 
 
-def find_git_repos(path=".", exclude=None):
+def find_git_repos(path=".", exclude=None, depth=999):
     gitdirs = []
 
     if exclude is None:
@@ -172,6 +174,9 @@ def find_git_repos(path=".", exclude=None):
     # Note that ".git" can be either a directory or a file!!!
     for root, dirs, files in os.walk(top=path, topdown=True, followlinks=True):
         dirs[:] = [d for d in dirs if d not in exclude]
+        if root.count("/") > depth:
+            dirs[:] = []
+            continue
         if ".git" in dirs:
             gitdirs.append(root)
             dirs.remove(".git")
