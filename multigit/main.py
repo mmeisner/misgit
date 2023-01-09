@@ -11,6 +11,9 @@ from multigit import misc
 # Column text to show if a repo is a submodule
 COL_SUBMODULE_TEXT = "mod"
 
+# Column separator (default is two spaces between columns)
+COL_SEPARATOR = "  "
+
 
 def main():
     opt = parser_create().parse_args()
@@ -133,13 +136,15 @@ def git_list_all(dirargs, exclude=None, fields="", as_diff=False):
 
         # Print the header
         header = [f"{col:{w[col]}}" for col in head]
-        print(" ".join(header))
+        header = COL_SEPARATOR.join(header)
+        print(header, file=sys.stderr)
+        print("-" * len(header), file=sys.stderr)
 
         # Print info line for each repo
         for path in dirpaths:
             d = repos[path]
             line = [f"{d[col]:{w[col]}}" for col in head]
-            print(" ".join(line), file=fd_out)
+            print(COL_SEPARATOR.join(line), file=fd_out)
 
         # close file to ensure that it is flushed before launching difftool
         if as_diff:
