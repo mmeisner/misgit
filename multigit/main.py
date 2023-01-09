@@ -8,6 +8,9 @@ import sys
 
 from multigit import misc
 
+# Column text to show if a repo is a submodule
+COL_SUBMODULE_TEXT = "mod"
+
 
 def main():
     opt = parser_create().parse_args()
@@ -17,7 +20,7 @@ def main():
         dirargs = ["."]
 
     excludes = opt.exclude
-    fields = "desc,branch,status"
+    fields = "desc,sub,branch,status"
     if opt.only_path:
         fields = ""
 
@@ -96,7 +99,7 @@ def git_list_all(dirargs, exclude=None, fields="", as_diff=False):
         repos = {}
         failed_paths = []
         for path in dirpaths:
-            desc, branch, status = "", "", ""
+            desc, branch, status, is_submodule = "", "", "", ""
             try:
                 if "desc" in fields:
                     desc = misc.cmd_run_get_output(f"git -C {path} describe --tags --always")
@@ -104,6 +107,8 @@ def git_list_all(dirargs, exclude=None, fields="", as_diff=False):
                     branch = misc.cmd_run_get_output(f"git -C {path} branch --show-current")
                 if "status" in fields:
                     status = git_status_to_shortstr(path)
+                if "sub" in fields:
+                    is_submodule = COL_SUBMODULE_TEXT if os.path.isfile(f"{path}/.git") else ""
             except Exception as e:
                 failed_paths.append(path)
                 print(e)
@@ -114,13 +119,14 @@ def git_list_all(dirargs, exclude=None, fields="", as_diff=False):
                 'desc': desc,
                 'branch': branch,
                 'status': status,
+                'sub': is_submodule,
             }
 
         for p in failed_paths:
             dirpaths.remove(p)
 
         # Compute max width of all columns across all lines
-        head = ['path', 'desc', 'branch', 'status']
+        head = ['path', 'desc', 'sub', 'branch', 'status']
         w = {}
         for k in head:
             w[k] = max([len(repos[path][k]) for path in repos.keys()] + [len(k)])
