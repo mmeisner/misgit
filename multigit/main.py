@@ -5,6 +5,7 @@
 import argparse
 import os
 import sys
+import time
 
 from multigit import misc
 
@@ -15,7 +16,10 @@ COL_SUBMODULE_TEXT = "mod"
 COL_SEPARATOR = "  "
 
 
+opt = argparse.Namespace()
+
 def main():
+    global opt
     opt = parser_create().parse_args()
 
     dirargs = opt.posargs
@@ -26,6 +30,8 @@ def main():
     fields = "desc,sub,branch,status"
     if opt.only_path:
         fields = ""
+
+    progress_start()
 
     git_list_all(dirargs, excludes, fields=fields, depth=opt.maxdepth, as_diff=opt.diff)
 
@@ -58,8 +64,8 @@ For each repo found, shows: repo path, tag, branch, status
         help="Show only git repo paths")
 
     g = parser.add_argument_group("Misc options")
-    # g.add_argument('-v', dest='verbose', action='count', default=1,
-    #     help="Be more verbose")
+    g.add_argument('-v', dest='verbose', action='count', default=0,
+        help="Be more verbose")
     g.add_argument('-h', action='help',
         help="Show this help message and exit")
 
@@ -76,13 +82,17 @@ def git_list_all(dirargs, exclude=None, fields="", depth=999, as_diff=False):
         sys.exit(1)
 
     out_files = []
+    elapsed_oswalk = 0
+    elapsed_gitcmd = 0
 
     for i, dirarg in enumerate(dirargs):
         if not os.path.isdir(dirarg):
             misc.error(f"Not a directory: {dirarg}")
             continue
 
+        started = time.time()
         dirpaths = find_git_repos(dirarg, exclude, depth=depth)
+        elapsed_oswalk += time.time() - started
         if not dirpaths:
             misc.error(f"No git repos found below {dirarg}")
             continue
@@ -101,9 +111,11 @@ def git_list_all(dirargs, exclude=None, fields="", depth=999, as_diff=False):
             print("\n".join(dirpaths), file=fd_out)
             continue
 
+        started = time.time()
         repos = {}
         failed_paths = []
         for path in dirpaths:
+            progress_print(path)
             desc, branch, status, is_submodule = "", "", "", ""
             try:
                 if "desc" in fields:
@@ -126,6 +138,8 @@ def git_list_all(dirargs, exclude=None, fields="", depth=999, as_diff=False):
                 'status': status,
                 'sub': is_submodule,
             }
+
+        elapsed_gitcmd += time.time() - started
 
         for p in failed_paths:
             dirpaths.remove(p)
@@ -152,10 +166,15 @@ def git_list_all(dirargs, exclude=None, fields="", depth=999, as_diff=False):
         if as_diff:
             fd_out.close()
 
+    progress_end()
+
     if as_diff:
         cmd = f"meld {out_files[0]} {out_files[1]} &"
         misc.log_shell(cmd)
         os.system(cmd)
+
+    if opt.verbose > 0:
+        print(f"elapsed: dirwalk={elapsed_oswalk:.1f}s git={elapsed_gitcmd:.1f}s", file=sys.stderr)
 
 
 def find_git_repos(path=".", exclude=None, depth=999):
@@ -177,6 +196,7 @@ def find_git_repos(path=".", exclude=None, depth=999):
         if root.count("/") > depth:
             dirs[:] = []
             continue
+        progress_print(root)
         if ".git" in dirs:
             gitdirs.append(root)
             dirs.remove(".git")
@@ -188,7 +208,26 @@ def find_git_repos(path=".", exclude=None, depth=999):
     for path in gitdirs:
         dirs.append(path[2:] if path.startswith("./") else path)
 
+    progress_end()
+
     return sorted(dirs)
+
+
+term_cols = 0
+
+def progress_start():
+    global term_cols
+    if sys.stdout.isatty():
+        term_cols, rows = os.get_terminal_size(0)
+
+def progress_end():
+    if opt.verbose and term_cols:
+        sys.stderr.write(" " * term_cols + "\r")
+
+def progress_print(s):
+    if opt.verbose and term_cols:
+        s = s[:term_cols - 1]
+        sys.stderr.write(s + "\r")
 
 
 def git_status_to_shortstr(path):
