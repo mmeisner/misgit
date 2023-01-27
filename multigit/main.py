@@ -27,9 +27,12 @@ def main():
         dirargs = ["."]
 
     excludes = opt.exclude
-    fields = "desc,sub,branch,status"
+
+    fields = "desc,sub,branch,time,status"
     if opt.only_path:
         fields = ""
+    if opt.timeformat.startswith("n"):
+        fields.replace("time,", "")
 
     progress_start()
 
@@ -56,12 +59,16 @@ For each repo found, shows: repo path, tag, branch, status
         help=f"""Exclude folder. Relative to search folders (or absolute). Can be given multiple times.""")
     g.add_argument("-d", dest='maxdepth', metavar='NUM', type=int, default=999,
         help=f"Max depth of search")
-    g.add_argument('--diff', dest='diff', action='store_true', default=False,
-        help="Compare two trees (requires two DIRectory arguments)")
 
-    #g = parser.add_argument_group("Advanced options")
+    g = parser.add_argument_group("Output options")
     g.add_argument('-p', dest='only_path', action="store_true",
         help="Show only git repo paths")
+    g.add_argument('-t', dest='timeformat', metavar="FORMAT", type=str, default="rel",
+        help="Format of committer date column: rel, date, time, none")
+
+    g = parser.add_argument_group("Advanced options")
+    g.add_argument('--diff', dest='diff', action='store_true', default=False,
+        help="Compare two trees (requires two DIRectory arguments)")
 
     g = parser.add_argument_group("Misc options")
     g.add_argument('-v', dest='verbose', action='count', default=0,
@@ -116,7 +123,8 @@ def git_list_all(dirargs, exclude=None, fields="", depth=999, as_diff=False):
         failed_paths = []
         for path in dirpaths:
             progress_print(path)
-            desc, branch, status, is_submodule = "", "", "", ""
+
+            desc, branch, status, _time, is_submodule = "", "", "", "", ""
             try:
                 if "desc" in fields:
                     desc = misc.cmd_run_get_output(f"git -C {path} describe --tags --always")
@@ -124,6 +132,21 @@ def git_list_all(dirargs, exclude=None, fields="", depth=999, as_diff=False):
                     branch = misc.cmd_run_get_output(f"git -C {path} branch --show-current")
                 if "status" in fields:
                     status = git_status_to_shortstr(path)
+                if "time" in fields:
+                    # %ct committer date, UNIX timestamp
+                    # %cd committer date (format respects --date= option)
+                    # %ci committer date, ISO 8601-like format: "2022-12-05 10:37:49 +0100"
+                    # %cs committer date, short format (YYYY-MM-DD)
+                    # --date=short
+                    # --date=format-local:'%Y-%m-%d %H:%M:%S'
+                    if opt.timeformat in ("rel", "human"):
+                        _time = misc.cmd_run_get_output(f"git -C {path} show -s --format=%ct")
+                        _time = started - int(_time)
+                        _time = misc.secs_to_human_str(_time)
+                    elif opt.timeformat == "date":
+                        _time = misc.cmd_run_get_output(f"git -C {path} show -s --format=%cs")
+                    elif opt.timeformat in ("time", "datetime"):
+                        _time = misc.cmd_run_get_output(f"git -C {path} show -s --format=%cd --date=format-local:'%Y-%m-%d %H:%M:%S'")
                 if "sub" in fields:
                     is_submodule = COL_SUBMODULE_TEXT if os.path.isfile(f"{path}/.git") else ""
             except Exception as e:
@@ -136,6 +159,7 @@ def git_list_all(dirargs, exclude=None, fields="", depth=999, as_diff=False):
                 'desc': desc,
                 'branch': branch,
                 'status': status,
+                'time': _time,
                 'sub': is_submodule,
             }
 
@@ -145,7 +169,7 @@ def git_list_all(dirargs, exclude=None, fields="", depth=999, as_diff=False):
             dirpaths.remove(p)
 
         # Compute max width of all columns across all lines
-        head = ['path', 'desc', 'sub', 'branch', 'status']
+        head = ['path', 'desc', 'sub', 'branch', 'time', 'status']
         w = {}
         for k in head:
             w[k] = max([len(repos[path][k]) for path in repos.keys()] + [len(k)])

@@ -53,3 +53,31 @@ def cmd_run_get_output(cmd: str, cwd=None, splitlines=False, on_error="raise"):
         return process.stdout.splitlines()
 
     return process.stdout.strip()
+
+
+def secs_to_human_str(secs, indent="  "):
+    """
+    Format number of seconds into a short human-readable timespan like one of
+    the following: "10.8y", "20.3w", "10.8d", "22.9h", "15.1m"
+
+    :param secs:   Delta seconds
+    :param indent: String to use as indent: more recent timestamps are indented more
+    :return:
+    """
+    intervals = (
+        (3600,                            60, "{v:.1f}m"),
+        (3600 * 24,                     3600, "{v:.1f}h"),
+        (3600 * 24 * 14,           24 * 3600, "{v:.1f}d"),
+        (3600 * 24 * 7 * 52,   7 * 24 * 3600, "{v:.1f}w"),
+        (3600 * 9999,        365 * 24 * 3600, "{v:.1f}y")
+    )
+
+    limit, div, fmt = intervals[-1]
+    i = len(intervals)
+    for i, (limit, div, fmt) in enumerate(intervals, start=1):
+        if secs < limit:
+            break
+
+    v = secs / div
+    indent = indent * (len(intervals) - i)
+    return indent + fmt.format(v=v)
