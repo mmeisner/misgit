@@ -3,6 +3,10 @@ import sys
 import subprocess
 
 
+def print_dim(s, file=None):
+    print("\033[2m" + s + "\033[0m", file=file)
+
+
 def error(s):
     sys.stderr.write(s + os.linesep)
 

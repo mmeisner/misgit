@@ -72,7 +72,7 @@ For each repo found, shows: repo path, tag, branch, status
 
     g = parser.add_argument_group("Misc options")
     g.add_argument('-v', dest='verbose', action='count', default=0,
-        help="Be more verbose")
+        help="Be more verbose. E.g. print list of modified files")
     g.add_argument('-h', action='help',
         help="Show this help message and exit")
 
@@ -124,14 +124,14 @@ def git_list_all(dirargs, exclude=None, fields="", depth=999, as_diff=False):
         for path in dirpaths:
             progress_print(path)
 
-            desc, branch, status, _time, is_submodule = "", "", "", "", ""
+            desc, branch, status, status_lines, _time, is_submodule = "", "", "", "", "", ""
             try:
                 if "desc" in fields:
                     desc = misc.cmd_run_get_output(f"git -C {path} describe --tags --always")
                 if "branch" in fields:
                     branch = misc.cmd_run_get_output(f"git -C {path} branch --show-current")
                 if "status" in fields:
-                    status = git_status_to_shortstr(path)
+                    status_lines, status = git_status_long_and_short(path)
                 if "time" in fields:
                     # %ct committer date, UNIX timestamp
                     # %cd committer date (format respects --date= option)
@@ -159,6 +159,7 @@ def git_list_all(dirargs, exclude=None, fields="", depth=999, as_diff=False):
                 'desc': desc,
                 'branch': branch,
                 'status': status,
+                'status_lines': status_lines,
                 'time': _time,
                 'sub': is_submodule,
             }
@@ -185,6 +186,9 @@ def git_list_all(dirargs, exclude=None, fields="", depth=999, as_diff=False):
             d = repos[path]
             line = [f"{d[col]:{w[col]}}" for col in head]
             print(COL_SEPARATOR.join(line), file=fd_out)
+            if opt.verbose and d['status_lines']:
+                lines = "\n    ".join(d['status_lines'])
+                misc.print_dim("    " + lines)
 
         # close file to ensure that it is flushed before launching difftool
         if as_diff:
@@ -198,7 +202,7 @@ def git_list_all(dirargs, exclude=None, fields="", depth=999, as_diff=False):
         os.system(cmd)
 
     if opt.verbose > 0:
-        print(f"elapsed: dirwalk={elapsed_oswalk:.1f}s git={elapsed_gitcmd:.1f}s", file=sys.stderr)
+        misc.print_dim(f"elapsed: dirwalk={elapsed_oswalk:.1f}s git={elapsed_gitcmd:.1f}s", file=sys.stderr)
 
 
 def find_git_repos(path=".", exclude=None, depth=999):
@@ -254,10 +258,10 @@ def progress_print(s):
         sys.stderr.write(s + "\r")
 
 
-def git_status_to_shortstr(path):
+def git_status_long_and_short(path):
     lines = misc.cmd_run_get_output(f"git -C {path} status --porcelain", splitlines=True)
     if not lines:
-        return ""
+        return "", ""
 
     status = {'M': 0, 'D': 0, 'R': 0, '?': 0}
     unparsed = 0
@@ -274,4 +278,5 @@ def git_status_to_shortstr(path):
 
     status['X'] = unparsed
     s_list = [f"{k}{v}" for k, v in status.items() if v > 0]
-    return " ".join(s_list)
+    lines = [line for line in lines if not line.startswith("??")]
+    return lines, " ".join(s_list)
