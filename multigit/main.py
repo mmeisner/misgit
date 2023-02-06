@@ -15,6 +15,8 @@ COL_SUBMODULE_TEXT = "mod"
 # Column separator (default is two spaces between columns)
 COL_SEPARATOR = "  "
 
+ALL_FIELDS = "path,url,name,desc,sub,branch,time,status"
+DEFAULT_FIELDS = "path,desc,sub,branch,time,status"
 
 opt = argparse.Namespace()
 
@@ -27,8 +29,8 @@ def main():
         dirargs = ["."]
 
     excludes = opt.exclude
+    fields = opt.fields
 
-    fields = "desc,sub,branch,time,status"
     if opt.only_path:
         fields = ""
     if opt.timeformat.startswith("n"):
@@ -67,6 +69,8 @@ For each repo found, shows: repo path, tag, branch, status
     g = parser.add_argument_group("Output options")
     g.add_argument('-p', dest='only_path', action="store_true",
         help="Show only git repo paths")
+    g.add_argument('-f', dest='fields', type=str, default=DEFAULT_FIELDS,
+        help=f"Fields/columns to show. Available ones: {ALL_FIELDS}")
     g.add_argument('-m', dest='more_info', action="store_true",
         help="Show more info. E.g. print list of files from 'git status'")
     g.add_argument('-t', dest='timeformat', metavar="FORMAT", type=str, default="rel",
@@ -130,7 +134,7 @@ def git_list_all(dirargs, exclude=None, fields="", depth=999, as_diff=False):
         for path in dirpaths:
             progress_print(path)
 
-            desc, branch, status, status_lines, _time, is_submodule = "", "", "", "", "", ""
+            desc, branch, status, status_lines, url, reponame, _time, is_submodule = "", "", "", "", "", "", "", ""
             try:
                 if "desc" in fields:
                     desc = misc.cmd_run_get_output(f"git -C {path} describe --tags --always")
@@ -138,6 +142,9 @@ def git_list_all(dirargs, exclude=None, fields="", depth=999, as_diff=False):
                     branch = misc.cmd_run_get_output(f"git -C {path} branch --show-current")
                 if "status" in fields:
                     status_lines, status = git_status_long_and_short(path)
+                if "url" in fields or "name" in fields:
+                    url = misc.cmd_run_get_output(f"git -C {path} config --get remote.origin.url")
+                    reponame = os.path.basename(url).replace(".git", "")
                 if "time" in fields:
                     # %ct committer date, UNIX timestamp
                     # %cd committer date (format respects --date= option)
@@ -166,6 +173,8 @@ def git_list_all(dirargs, exclude=None, fields="", depth=999, as_diff=False):
                 'branch': branch,
                 'status': status,
                 'status_lines': status_lines,
+                'url': url,
+                'name': reponame,
                 'time': _time,
                 'sub': is_submodule,
             }
@@ -176,7 +185,7 @@ def git_list_all(dirargs, exclude=None, fields="", depth=999, as_diff=False):
             dirpaths.remove(p)
 
         # Compute max width of all columns across all lines
-        head = ['path', 'desc', 'sub', 'branch', 'time', 'status']
+        head = fields.split(",")
         w = {}
         for k in head:
             w[k] = max([len(repos[path][k]) for path in repos.keys()] + [len(k)])
