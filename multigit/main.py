@@ -42,6 +42,10 @@ def main():
 examples = f"""Examples:
   Compare two directories of git repos:
     ./%(prog)s --diff foo baz
+  List repos excluding some folder (matching any folder in the hierarchy):
+    ./%(prog)s -x workdir
+  List repos excluding top-level folder:
+    ./%(prog)s -x workdir/foobaz
 """
 
 def parser_create():
@@ -216,6 +220,15 @@ def find_git_repos(path=".", exclude=None, depth=999):
     for i in range(len(exclude)):
         exclude[i] = exclude[i].rstrip("/")
 
+    exc_rel = []
+    exc_abs = []
+    for x in exclude:
+        if "/" in x:
+            x_noslash = x.lstrip("/")
+            exc_abs.append(f"{path}/{x_noslash}")
+        else:
+            exc_rel.append(x)
+
     # From Python os.walk() docs:
     # When topdown is True, the caller can modify the dirnames list in-place
     # (perhaps using del or slice assignment), and walk() will only recurse
@@ -225,10 +238,14 @@ def find_git_repos(path=".", exclude=None, depth=999):
     # before it resumes walk() again.
     # Note that ".git" can be either a directory or a file!!!
     for root, dirs, files in os.walk(top=path, topdown=True, followlinks=True):
-        dirs[:] = [d for d in dirs if d not in exclude]
+        dirs[:] = [d for d in dirs if d not in exc_rel]
         if root.count("/") > depth:
             dirs[:] = []
             continue
+
+        if any([x for x in exc_abs if root.startswith(x)]):
+            continue
+
         progress_print(root)
         if ".git" in dirs:
             gitdirs.append(root)
