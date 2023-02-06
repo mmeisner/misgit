@@ -56,7 +56,7 @@ For each repo found, shows: repo path, tag, branch, status
     g.add_argument(dest='posargs', metavar='DIR', type=str, nargs="*",
         help=f"""Folder(s) to search for git repos. Default is current dir""")
     g.add_argument("-x", dest='exclude', metavar='DIR', type=str, action="append",
-        help=f"""Exclude folder. Relative to search folders (or absolute). Can be given multiple times.""")
+        help=f"""Exclude folder DIR. Relative to search folders (or absolute). Can be given multiple times.""")
     g.add_argument("-d", dest='maxdepth', metavar='NUM', type=int, default=999,
         help=f"Max depth of search")
 
@@ -212,6 +212,9 @@ def find_git_repos(path=".", exclude=None, depth=999):
 
     if exclude is None:
         exclude = []
+
+    for i in range(len(exclude)):
+        exclude[i] = exclude[i].rstrip("/")
 
     # From Python os.walk() docs:
     # When topdown is True, the caller can modify the dirnames list in-place
