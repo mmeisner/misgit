@@ -63,6 +63,8 @@ For each repo found, shows: repo path, tag, branch, status
     g = parser.add_argument_group("Output options")
     g.add_argument('-p', dest='only_path', action="store_true",
         help="Show only git repo paths")
+    g.add_argument('-m', dest='more_info', action="store_true",
+        help="Show more info. E.g. print list of files from 'git status'")
     g.add_argument('-t', dest='timeformat', metavar="FORMAT", type=str, default="rel",
         help="Format of committer date column: rel, date, time, none")
 
@@ -72,7 +74,7 @@ For each repo found, shows: repo path, tag, branch, status
 
     g = parser.add_argument_group("Misc options")
     g.add_argument('-v', dest='verbose', action='count', default=0,
-        help="Be more verbose. E.g. print list of modified files")
+        help="Be more verbose. E.g. print progress")
     g.add_argument('-h', action='help',
         help="Show this help message and exit")
 
@@ -186,7 +188,7 @@ def git_list_all(dirargs, exclude=None, fields="", depth=999, as_diff=False):
             d = repos[path]
             line = [f"{d[col]:{w[col]}}" for col in head]
             print(COL_SEPARATOR.join(line), file=fd_out)
-            if opt.verbose and d['status_lines']:
+            if opt.more_info and d['status_lines']:
                 lines = "\n    ".join(d['status_lines'])
                 misc.print_dim("    " + lines)
 
