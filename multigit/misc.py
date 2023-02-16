@@ -3,16 +3,33 @@ import sys
 import subprocess
 
 
+term_cols = 0
+verbose = False
+
+
 def print_dim(s, file=None):
     print("\033[2m" + s + "\033[0m", file=file)
-
 
 def error(s):
     sys.stderr.write(s + os.linesep)
 
-
 def log_shell(s):
     print(s)
+
+
+def progress_start():
+    global term_cols
+    if sys.stdout.isatty():
+        term_cols, rows = os.get_terminal_size(0)
+
+def progress_end():
+    if verbose and term_cols:
+        sys.stderr.write(" " * term_cols + "\r")
+
+def progress_print(s):
+    if verbose and term_cols:
+        s = s[:term_cols - 1]
+        sys.stderr.write(s + "\r")
 
 
 def git_get_sha_branch_describe(repo_path: str, what="hbd"):
