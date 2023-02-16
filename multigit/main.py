@@ -32,9 +32,12 @@ def main():
 
     misc.progress_start()
 
-    gitops.list_repos(dirargs, excludes, depth=opt.maxdepth,
-                      fields=fields, timeformat=opt.timeformat,
-                      as_diff=opt.diff, more_info=opt.more_info)
+    if opt.pull:
+        gitops.pull_repos(dirargs, excludes, depth=opt.maxdepth)
+    else:
+        gitops.list_repos(dirargs, excludes, depth=opt.maxdepth,
+                          fields=fields, timeformat=opt.timeformat,
+                          as_diff=opt.diff, more_info=opt.more_info)
 
 
 examples = f"""Examples:
@@ -75,6 +78,8 @@ For each repo found, shows: repo path, tag, branch, status
     g = parser.add_argument_group("Advanced options")
     g.add_argument('--diff', dest='diff', action='store_true', default=False,
         help="Compare two trees (requires two DIRectory arguments)")
+    g.add_argument('--pull', dest='pull', action='store_true', default=False,
+        help="Pull all repos (with --rebase)")
 
     g = parser.add_argument_group("Misc options")
     g.add_argument('-v', dest='verbose', action='count', default=0,

@@ -215,3 +215,36 @@ def git_status_long_and_short(path):
     s_list = [f"{k}{v}" for k, v in status.items() if v > 0]
     lines = [line for line in lines if not line.startswith("??")]
     return lines, " ".join(s_list)
+
+
+def pull_repos(dirargs, exclude=None, depth=999):
+    elapsed_oswalk = 0
+    elapsed_gitcmd = 0
+
+    for i, dirarg in enumerate(dirargs):
+        if not os.path.isdir(dirarg):
+            misc.error(f"Not a directory: {dirarg}")
+            continue
+
+        started = time.time()
+        dirpaths = find_repos(dirarg, exclude, depth=depth)
+        elapsed_oswalk += time.time() - started
+        if not dirpaths:
+            misc.error(f"No git repos found below {dirarg}")
+            continue
+
+        started = time.time()
+        for path in dirpaths:
+            misc.print_lite(path)
+            try:
+                lines = misc.cmd_run_get_output(f"git -C {path} pull --rebase", splitlines=True, on_error=RuntimeError)
+                print("\n".join(lines))
+            except RuntimeError as e:
+                print(str(e))
+
+        elapsed_gitcmd += time.time() - started
+
+    misc.progress_end()
+
+    if misc.verbose > 0:
+        misc.print_dim(f"elapsed: dirwalk={elapsed_oswalk:.1f}s git={elapsed_gitcmd:.1f}s", file=sys.stderr)

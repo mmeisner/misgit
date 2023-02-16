@@ -10,6 +10,9 @@ verbose = False
 def print_dim(s, file=None):
     print("\033[2m" + s + "\033[0m", file=file)
 
+def print_lite(s, file=None):
+    print("\033[1m\033[97m" + s + "\033[0m", file=file)
+
 def error(s):
     sys.stderr.write(s + os.linesep)
 
