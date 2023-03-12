@@ -23,7 +23,11 @@ def main():
         dirargs = ["."]
 
     excludes = opt.exclude
-    fields = opt.fields
+
+    if opt.fields_show_all:
+        fields = ALL_FIELDS.replace("name,", "")
+    else:
+        fields = opt.fields
 
     if opt.only_path:
         fields = ""
@@ -66,6 +70,8 @@ For each repo found, shows: repo path, tag, branch, status
         help=f"Max depth of search")
 
     g = parser.add_argument_group("Output options")
+    g.add_argument('-a', dest='fields_show_all', action="store_true",
+        help="Show almost all output columns")
     g.add_argument('-p', dest='only_path', action="store_true",
         help="Show only git repo paths")
     g.add_argument('-f', dest='fields', type=str, default=DEFAULT_FIELDS,
