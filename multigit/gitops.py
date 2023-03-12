@@ -102,6 +102,11 @@ def list_repos(dirargs, exclude=None, depth=999,
 
         elapsed_gitcmd += time.time() - started
 
+        # Remove "submodule" column if there are no submodule repos
+        any_submods = any(1 for path in repos.keys() if repos[path]['sub'])
+        if not any_submods:
+            fields = fields.replace(",sub", "")
+
         for p in failed_paths:
             dirpaths.remove(p)
 
