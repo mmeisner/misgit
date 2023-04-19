@@ -99,6 +99,8 @@ def list_repos(dirargs, exclude=None, depth=999,
                 'time': _time,
                 'sub': is_submodule,
             }
+            if os.path.islink(path):
+                repos[path]['path'] += "@"
 
         elapsed_gitcmd += time.time() - started
 
