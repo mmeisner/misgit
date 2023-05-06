@@ -7,11 +7,33 @@ term_cols = 0
 verbose = False
 
 
+class Ansi:
+    reset = "\033[0m"
+    bold = "\033[1m"
+    dim = "\033[2m"
+
+    red = "\033[31m"
+    green = "\033[32m"
+    yellow = "\033[33m"
+    blue = "\033[34m"
+    magenta = "\033[35m"
+    cyan = "\033[36m"
+    white = "\033[37m"
+
+    ired = "\033[91m"
+    igreen = "\033[92m"
+    iyellow = "\033[93m"
+    iblue = "\033[94m"
+    imagenta = "\033[95m"
+    icyan ="\033[96m"
+    iwhite ="\033[97m"
+
+
 def print_dim(s, file=None):
-    print("\033[2m" + s + "\033[0m", file=file)
+    print(f"{Ansi.dim}{s}{Ansi.reset}", file=file)
 
 def print_lite(s, file=None):
-    print("\033[1m\033[97m" + s + "\033[0m", file=file)
+    print(f"{Ansi.bold}{Ansi.iwhite}{s}{Ansi.reset}", file=file)
 
 def error(s):
     sys.stderr.write(s + os.linesep)
