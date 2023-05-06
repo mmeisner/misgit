@@ -3,6 +3,7 @@ import sys
 import time
 
 from multigit import misc
+from multigit.misc import Ansi
 
 
 # Column text to show if a repo is a submodule
@@ -10,6 +11,9 @@ COL_SUBMODULE_TEXT = "mod"
 
 # Column separator (default is two spaces between columns)
 COL_SEPARATOR = "  "
+
+# Color code(s) to use for printing a symlinked repo
+PATH_SYMLINK_COLOR = Ansi.imagenta
 
 
 def list_repos(dirargs, exclude=None, depth=999,
@@ -124,11 +128,23 @@ def list_repos(dirargs, exclude=None, depth=999,
         print(header, file=sys.stderr)
         print("-" * len(header), file=sys.stderr)
 
+        # Save 'path' column width; we will overwrite it if we are printing
+        # a symlinked repo and thus need to restore it
+        # Reason for these shenanigans is that the Python print function
+        # counts ANSI characters like other chars, so we temporarily
+        # increase the 'path' column width to accommodate the ANSI codes.
+        w_path_saved = w['path']
+
         # Print info line for each repo
         for path in dirpaths:
             d = repos[path]
-            line = [f"{d[col]:{w[col]}}" for col in head]
-            print(COL_SEPARATOR.join(line), file=fd_out)
+            if d['path'].endswith("@"):
+                w['path'] += len(PATH_SYMLINK_COLOR + Ansi.reset)
+                d['path'] = f"{PATH_SYMLINK_COLOR}{d['path']}{Ansi.reset}"
+            columns = [f"{d[col]:{w[col]}}" for col in head]
+            print(COL_SEPARATOR.join(columns), file=fd_out)
+            w['path'] = w_path_saved
+
             if more_info and d['status_lines']:
                 lines = "\n    ".join(d['status_lines'])
                 misc.print_dim("    " + lines)
