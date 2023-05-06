@@ -28,6 +28,21 @@ class Ansi:
     icyan ="\033[96m"
     iwhite ="\033[97m"
 
+    pink = "\33[38:5:206m"
+
+    @classmethod
+    def name_to_code(cls, name):
+        return Ansi.__dict__[name] or ""
+
+    @classmethod
+    def get_colors(cls):
+        s = ""
+        for k, code in Ansi.__dict__.items():
+            if type(Ansi.__dict__[k]) == str and not k.startswith("__") and k != "reset":
+                s += f"{code}{k}{Ansi.reset} "
+
+        return s
+
 
 def print_dim(s, file=None):
     print(f"{Ansi.dim}{s}{Ansi.reset}", file=file)

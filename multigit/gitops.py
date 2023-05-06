@@ -1,6 +1,7 @@
 import os
 import sys
 import time
+import fnmatch
 
 from multigit import misc
 from multigit.misc import Ansi
@@ -18,7 +19,10 @@ PATH_SYMLINK_COLOR = Ansi.imagenta
 
 def list_repos(dirargs, exclude=None, depth=999,
                fields="", timeformat="",
-               as_diff=False, more_info=False):
+               as_diff=False, more_info=False,
+               branch_colors=None):
+    if branch_colors is None:
+        branch_colors = {}
     if as_diff and len(dirargs) != 2:
         misc.error("Two directories are required")
         sys.exit(1)
@@ -138,12 +142,32 @@ def list_repos(dirargs, exclude=None, depth=999,
         # Print info line for each repo
         for path in dirpaths:
             d = repos[path]
+            w_branch_saved = w['branch']
+
             if d['path'].endswith("@"):
                 w['path'] += len(PATH_SYMLINK_COLOR + Ansi.reset)
                 d['path'] = f"{PATH_SYMLINK_COLOR}{d['path']}{Ansi.reset}"
+
+            ansi_code = None
+            for pat, ansi in branch_colors.items():
+                # Process default pattern/color outside the loop, so it comes last
+                if pat == "*":
+                    continue
+                if fnmatch.fnmatch(d['branch'], pat):
+                    ansi_code = ansi
+                    break
+
+            if ansi_code is None and "*" in branch_colors:
+                ansi_code = branch_colors["*"]
+
+            if ansi_code:
+                w['branch'] += len(ansi_code + Ansi.reset)
+                d['branch'] = f"{ansi_code}{d['branch']}{Ansi.reset}"
+
             columns = [f"{d[col]:{w[col]}}" for col in head]
             print(COL_SEPARATOR.join(columns), file=fd_out)
             w['path'] = w_path_saved
+            w['branch'] = w_branch_saved
 
             if more_info and d['status_lines']:
                 lines = "\n    ".join(d['status_lines'])

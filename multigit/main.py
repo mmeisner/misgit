@@ -6,10 +6,16 @@ import argparse
 
 from . import gitops
 from . import misc
+from .misc import Ansi
 
 
 ALL_FIELDS = "path,url,name,desc,sub,branch,time,status"
 DEFAULT_FIELDS = "path,desc,sub,branch,time,status"
+BRANCH_COLORS = {
+    "main": "",
+    "master": "",
+    "*": "green",
+}
 
 opt = argparse.Namespace()
 
@@ -34,6 +40,8 @@ def main():
     if opt.timeformat.startswith("n"):
         fields.replace("time,", "")
 
+    branch_colors = get_branch_colors()
+
     misc.progress_start()
 
     if opt.pull:
@@ -41,16 +49,22 @@ def main():
     else:
         gitops.list_repos(dirargs, excludes, depth=opt.maxdepth,
                           fields=fields, timeformat=opt.timeformat,
-                          as_diff=opt.diff, more_info=opt.more_info)
+                          as_diff=opt.diff, more_info=opt.more_info,
+                          branch_colors=branch_colors)
 
 
 examples = f"""Examples:
   Compare two directories of git repos:
-    ./%(prog)s --diff foo baz
+    %(prog)s --diff foo baz
   List repos excluding some folder (matching any folder in the hierarchy):
-    ./%(prog)s -x workdir
+    %(prog)s -x workdir
   List repos excluding top-level folder:
-    ./%(prog)s -x workdir/foobaz
+    %(prog)s -x workdir/foobaz
+  List repos with specific branches colored:
+    %(prog)s -c'feat*=pink,bugfix*=ired'
+
+Colors (for -c option):
+    {Ansi.get_colors()}
 """
 
 def parser_create():
@@ -80,6 +94,11 @@ For each repo found, shows: repo path, tag, branch, status
         help="Show more info. E.g. print list of files from 'git status'")
     g.add_argument('-t', dest='timeformat', metavar="FORMAT", type=str, default="rel",
         help="Format of committer date column: rel, date, time, none")
+    g.add_argument('-c', dest='branch_color', type=str, metavar="BRANCH=COLOR",
+        help="""\
+Colorize branch column where BRANCH is a glob pattern, e.g.
+'master=cyan,feature*=ired'
+The '*' name/pattern acts as default color""")
 
     g = parser.add_argument_group("Advanced options")
     g.add_argument('--diff', dest='diff', action='store_true', default=False,
@@ -94,3 +113,26 @@ For each repo found, shows: repo path, tag, branch, status
         help="Show this help message and exit")
 
     return parser
+
+
+def get_branch_colors():
+    branch_colors = BRANCH_COLORS.copy()
+    if opt.branch_color:
+        if "," in opt.branch_color:
+            items = opt.branch_color.split(",")
+        else:
+            items = [opt.branch_color]
+
+        for branch_color in items:
+            if "=" in branch_color:
+                branch, color = branch_color.split("=")
+            else:
+                branch, color = branch_color, "iyellow"
+            branch_colors[branch] = color
+
+    for name in branch_colors.keys():
+        ansi_name = branch_colors[name]
+        if ansi_name:
+            branch_colors[name] = Ansi.name_to_code(ansi_name)
+
+    return branch_colors
