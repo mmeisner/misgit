@@ -43,6 +43,15 @@ class Ansi:
 
         return s
 
+    @classmethod
+    def set_no_colors(cls):
+        """
+        Set all color codes to the empty string thus disabling coloring entirely
+        """
+        for k in Ansi.__dict__.keys():
+            if type(Ansi.__dict__[k]) == str and not k.startswith("__"):
+                setattr(Ansi, k, "")
+
 
 def print_dim(s, file=None):
     print(f"{Ansi.dim}{s}{Ansi.reset}", file=file)

@@ -14,15 +14,19 @@ COL_SUBMODULE_TEXT = "mod"
 COL_SEPARATOR = "  "
 
 # Color code(s) to use for printing a symlinked repo
-PATH_SYMLINK_COLOR = Ansi.imagenta
+PATH_SYMLINK_COLOR = "imagenta"
 
 
 def list_repos(dirargs, exclude=None, depth=999,
                fields="", timeformat="",
                as_diff=False, more_info=False,
                branch_colors=None):
+
+    path_symlink_color = Ansi.name_to_code(PATH_SYMLINK_COLOR)
+
     if branch_colors is None:
         branch_colors = {}
+
     if as_diff and len(dirargs) != 2:
         misc.error("Two directories are required")
         sys.exit(1)
@@ -126,11 +130,12 @@ def list_repos(dirargs, exclude=None, depth=999,
         for k in head:
             w[k] = max([len(repos[path][k]) for path in repos.keys()] + [len(k)])
 
-        # Print the header
-        header = [f"{col:{w[col]}}" for col in head]
-        header = COL_SEPARATOR.join(header)
-        print(header, file=sys.stderr)
-        print("-" * len(header), file=sys.stderr)
+        # Print the header (unless we are producing files for diff
+        if not as_diff:
+            header = [f"{col:{w[col]}}" for col in head]
+            header = COL_SEPARATOR.join(header)
+            print(header, file=fd_out)
+            print("-" * len(header), file=fd_out)
 
         # Save 'path' column width; we will overwrite it if we are printing
         # a symlinked repo and thus need to restore it
@@ -145,8 +150,8 @@ def list_repos(dirargs, exclude=None, depth=999,
             w_branch_saved = w['branch']
 
             if d['path'].endswith("@"):
-                w['path'] += len(PATH_SYMLINK_COLOR + Ansi.reset)
-                d['path'] = f"{PATH_SYMLINK_COLOR}{d['path']}{Ansi.reset}"
+                w['path'] += len(path_symlink_color + Ansi.reset)
+                d['path'] = f"{path_symlink_color}{d['path']}{Ansi.reset}"
 
             ansi_code = None
             for pat, ansi in branch_colors.items():

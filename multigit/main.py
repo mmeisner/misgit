@@ -24,6 +24,10 @@ def main():
     opt = parser_create().parse_args()
     misc.verbose = opt.verbose
 
+    # We don't want any ANSI codes when writing output to a file
+    if opt.diff:
+        Ansi.set_no_colors()
+
     dirargs = opt.posargs
     if not dirargs:
         dirargs = ["."]
