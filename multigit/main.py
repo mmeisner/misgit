@@ -9,8 +9,8 @@ from . import misc
 from .misc import Ansi
 
 
-ALL_FIELDS = "path,url,name,desc,sub,branch,time,status"
-DEFAULT_FIELDS = "path,desc,sub,branch,time,status"
+ALL_FIELDS = "path,url,name,sub,desc,branch,time,status"
+DEFAULT_FIELDS = "path,sub,desc,branch,time,status"
 BRANCH_COLORS = {
     "main": "",
     "master": "",
