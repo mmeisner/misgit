@@ -178,6 +178,8 @@ def list_repos(dirargs, exclude=None, depth=999,
                 lines = "\n    ".join(d['status_lines'])
                 misc.print_dim("    " + lines)
 
+        misc.print_dim(f"Listed {len(dirpaths)} repos")
+
         # close file to ensure that it is flushed before launching difftool
         if as_diff:
             fd_out.close()
