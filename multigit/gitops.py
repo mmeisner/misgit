@@ -35,7 +35,18 @@ def list_repos(dirargs, exclude=None, depth=999,
     elapsed_oswalk = 0
     elapsed_gitcmd = 0
 
+    # Find out if we should cut off leading path components...
+    dir_names_pathcuts = []
     for i, dirarg in enumerate(dirargs):
+        if ":" in dirarg:
+            dirname, path_cut = dirarg.split(":", maxsplit=1)
+            path_cut = int(path_cut)
+        else:
+            dirname, path_cut = dirarg, 0
+
+        dir_names_pathcuts.append((dirname, path_cut))
+
+    for i, (dirarg, pathcut) in enumerate(dir_names_pathcuts):
         if not os.path.isdir(dirarg):
             misc.error(f"Not a directory: {dirarg}")
             continue
@@ -100,8 +111,21 @@ def list_repos(dirargs, exclude=None, depth=999,
                 print(e)
                 continue
 
+            # Cut front directory parts of the full path to be printed/displayed
+            path_for_display = path
+            if pathcut:
+                parts = path.split("/")
+                # Remove first (empty) component if it is an absolute path
+                if not parts[0]:
+                    parts = parts[1:]
+                if pathcut > len(parts):
+                    pathcut = len(parts)
+                path_for_display = "/".join(parts[pathcut:])
+                if path_for_display == "":
+                    path_for_display = os.path.basename(path)
+
             repos[path] = {
-                'path': path,
+                'path': path_for_display,
                 'desc': desc,
                 'branch': branch,
                 'status': status,
@@ -170,7 +194,7 @@ def list_repos(dirargs, exclude=None, depth=999,
                 d['branch'] = f"{ansi_code}{d['branch']}{Ansi.reset}"
 
             columns = [f"{d[col]:{w[col]}}" for col in head]
-            print(COL_SEPARATOR.join(columns), file=fd_out)
+            print(COL_SEPARATOR.join(columns).rstrip(), file=fd_out)
             w['path'] = w_path_saved
             w['branch'] = w_branch_saved
 

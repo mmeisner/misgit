@@ -59,10 +59,10 @@ def main():
 
 examples = f"""Examples:
   Compare two directories of git repos:
-    %(prog)s --diff foo baz
+    %(prog)s --diff ./foo:1 /home/joe/work/foo:4
   List repos excluding some folder (matching any folder in the hierarchy):
     %(prog)s -x workdir
-  List repos excluding top-level folder:
+  List repos excluding specific folder:
     %(prog)s -x workdir/foobaz
   List repos with specific branches colored:
     %(prog)s -c'feat*=pink,bugfix*=ired'
@@ -81,9 +81,12 @@ For each repo found, shows: repo path, tag, branch, status
 
     g = parser.add_argument_group("Main options")
     g.add_argument(dest='posargs', metavar='DIR', type=str, nargs="*",
-        help=f"""Folder(s) to search for git repos. Default is current dir""")
+        help=f"""Folder(s) to search for git repos. Default is current dir.
+If directory is suffixed with ':N' then the N first path components will be
+removed when printing the repo path. This is especially useful with --diff option""")
     g.add_argument("-x", dest='exclude', metavar='DIR', type=str, action="append",
-        help=f"""Exclude folder DIR. Relative to search folders (or absolute). Can be given multiple times.""")
+        help=f"""Exclude folder DIR. Relative to search folders (or absolute).
+Can be given multiple times.""")
     g.add_argument("-d", dest='maxdepth', metavar='NUM', type=int, default=999,
         help=f"Max depth of search")
 

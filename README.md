@@ -10,37 +10,63 @@ Here is an example:
 
 ```
 $ misgit
-path                      desc    branch status
-benchmark-ab              c0bafbb main
-jenkins-cli               e301f85 main   M1 ?8
-logadoo                   b9cfb67 main   M1 ?2
-misgit                    d790567 main   M1
-openwrt-image-buildomatic 9466633 main   ?4
-repomaker                 v0.1.0  main   M2 ?2
-rspsu                     v0.1.0  main
+path                        desc                branch  time      status
+------------------------------------------------------------------------
+jenkins-cli                 v0.1.0              main    1.7y      M1 ?6
+misgit                      v0.1.0-16-gfe9d4ab  main        4.5d  ?1
+openwrt-image-buildomatic   9466633             main      46.4w   ?4
+repomaker                   v0.1.0              main    1.2y      M2 ?2
+rspsu                       v0.1.0              main    1.0y
+Listed 5 repos
 ```
 
 And here is the help:
 ```
 $ misgit -h
-usage: misgit [-x DIR] [--diff] [-p] [-h] [DIR [DIR ...]]
+usage: misgit [-x DIR] [-d NUM] [-a] [-p] [-f FIELDS] [-m] [-t FORMAT] [-c BRANCH=COLOR] [--diff] [--pull] [-v] [-h]
+              [DIR ...]
 
 Show git summary info for all git repos below some folder (recursively)
 For each repo found, shows: repo path, tag, branch, status
 
 Main options:
-  DIR     Folder(s) to search for git repos. Default is current dir
-  -x DIR  Exclude folder. Relative to search folders (or absolute).
-          Can be given multiple times.
-  --diff  Compare two trees (requires two DIRectory arguments)
-  -p      Show only git repo paths
+  DIR              Folder(s) to search for git repos. Default is current dir.
+                   If directory is suffixed with ':N' then the N first path components will be
+                   removed when printing the repo path. This is especially useful with --diff option
+  -x DIR           Exclude folder DIR. Relative to search folders (or absolute).
+                   Can be given multiple times.
+  -d NUM           Max depth of search
+
+Output options:
+  -a               Show almost all output columns
+  -p               Show only git repo paths
+  -f FIELDS        Fields/columns to show. Available ones: path,url,name,sub,desc,branch,time,status
+  -m               Show more info. E.g. print list of files from 'git status'
+  -t FORMAT        Format of committer date column: rel, date, time, none
+  -c BRANCH=COLOR  Colorize branch column where BRANCH is a glob pattern, e.g.
+                   'master=cyan,feature*=ired'
+                   The '*' name/pattern acts as default color
+
+Advanced options:
+  --diff           Compare two trees (requires two DIRectory arguments)
+  --pull           Pull all repos (with --rebase)
 
 Misc options:
-  -h      Show this help message and exit
+  -v               Be more verbose. E.g. print progress
+  -h               Show this help message and exit
 
 Examples:
   Compare two directories of git repos:
-    ./misgit --diff foo baz
+    misgit --diff ./foo:1 /home/joe/work/foo:4
+  List repos excluding some folder (matching any folder in the hierarchy):
+    misgit -x workdir
+  List repos excluding specific folder:
+    misgit -x workdir/foobaz
+  List repos with specific branches colored:
+    misgit -c'feat*=pink,bugfix*=ired'
+
+Colors (for -c option):
+    bold dim red green yellow blue magenta cyan white ired igreen iyellow iblue imagenta icyan iwhite pink
 ```
 
 ## Installation
