@@ -78,8 +78,8 @@ def list_repos(dirargs, exclude=None, depth=999,
         for path in dirpaths:
             misc.progress_print(path)
 
-            desc, branch, status, status_lines, url, reponame, _time, msg, is_submodule = \
-                "", "", "", "", "", "", "", "", ""
+            desc, lasttag, branch, status, status_lines, url, reponame, _time, msg, is_submodule = \
+                "", "", "", "", "", "", "", "", "", ""
             try:
                 if "desc" in fields:
                     desc = misc.cmd_run_get_output(f"git -C {path} describe --tags --always")
@@ -93,6 +93,10 @@ def list_repos(dirargs, exclude=None, depth=999,
                 if "msg" in fields:
                     # Get message of last git commit
                     msg = misc.cmd_run_get_output(f"git -C {path} show -s --format=%s")
+                if "lasttag" in fields:
+                    # TODO: Don't show last tag if it points to the same commit as "git describe" returned
+                    last_tag_ref = misc.cmd_run_get_output(f"git -C {path} rev-list --tags --max-count=1")
+                    lasttag = misc.cmd_run_get_output(f"git -C {path} describe --tags {last_tag_ref}")
                 if "time" in fields:
                     # %ct committer date, UNIX timestamp
                     # %cd committer date (format respects --date= option)
@@ -131,6 +135,7 @@ def list_repos(dirargs, exclude=None, depth=999,
             repos[path] = {
                 'path': path_for_display,
                 'desc': desc,
+                'lasttag': lasttag,
                 'branch': branch,
                 'status': status,
                 'status_lines': status_lines,

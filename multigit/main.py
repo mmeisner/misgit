@@ -9,7 +9,7 @@ from . import misc
 from .misc import Ansi
 
 
-ALL_FIELDS = "path,url,name,sub,desc,branch,time,status,msg"
+ALL_FIELDS = "path,url,name,sub,desc,lasttag,branch,time,status,msg"
 DEFAULT_FIELDS = "path,sub,desc,branch,time,status,msg"
 BRANCH_COLORS = {
     "main": "",
@@ -74,7 +74,9 @@ Colors (for -c option):
 def parser_create():
     description = f"""
 Show git summary info for all git repos below some folder (recursively) 
-For each repo found, shows: repo path, tag, branch, status
+
+For each repo found, shows: {DEFAULT_FIELDS}
+All available fields are:   {ALL_FIELDS}
 """
     parser = argparse.ArgumentParser(
         description=description, epilog=examples, add_help=False, formatter_class=argparse.RawTextHelpFormatter)
