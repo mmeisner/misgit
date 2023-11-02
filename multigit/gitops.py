@@ -78,7 +78,8 @@ def list_repos(dirargs, exclude=None, depth=999,
         for path in dirpaths:
             misc.progress_print(path)
 
-            desc, branch, status, status_lines, url, reponame, _time, is_submodule = "", "", "", "", "", "", "", ""
+            desc, branch, status, status_lines, url, reponame, _time, msg, is_submodule = \
+                "", "", "", "", "", "", "", "", ""
             try:
                 if "desc" in fields:
                     desc = misc.cmd_run_get_output(f"git -C {path} describe --tags --always")
@@ -89,6 +90,9 @@ def list_repos(dirargs, exclude=None, depth=999,
                 if "url" in fields or "name" in fields:
                     url = misc.cmd_run_get_output(f"git -C {path} config --get remote.origin.url")
                     reponame = os.path.basename(url).replace(".git", "")
+                if "msg" in fields:
+                    # Get message of last git commit
+                    msg = misc.cmd_run_get_output(f"git -C {path} show -s --format=%s")
                 if "time" in fields:
                     # %ct committer date, UNIX timestamp
                     # %cd committer date (format respects --date= option)
@@ -133,6 +137,7 @@ def list_repos(dirargs, exclude=None, depth=999,
                 'url': url,
                 'name': reponame,
                 'time': _time,
+                'msg': msg,
                 'sub': is_submodule,
             }
             if os.path.islink(path):
