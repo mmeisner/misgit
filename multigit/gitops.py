@@ -4,7 +4,7 @@ import time
 import fnmatch
 
 from multigit import misc
-from multigit.misc import Ansi
+from multigit.misc import Ansi, error
 
 
 # Column text to show if a repo is a submodule
@@ -336,3 +336,75 @@ def pull_repos(dirargs, exclude=None, depth=999):
 
     if misc.verbose > 0:
         misc.print_dim(f"elapsed: dirwalk={elapsed_oswalk:.1f}s git={elapsed_gitcmd:.1f}s", file=sys.stderr)
+
+
+def list_branches(sortby: str = "date"):
+    """
+    List all branches in current repo with date, branch name and author
+
+    :param sortby: Sort by date or name
+    """
+    if sortby.startswith("d"):
+        sortby = "authordate"
+    elif sortby.startswith("a"):
+        sortby = "authorname"
+    elif sortby.startswith("n") or sortby.startswith("r") or sortby.startswith("b"):
+        sortby = "refname"
+    else:
+        error(f"Unknown sortby: '{sortby}'")
+        sys.exit(1)
+
+    format = "%(authordate:format:%Y-%m-%d %H:%M),%(if)%(HEAD)%(then)*%(else)%(refname:strip=3)%(end),%(authorname),%(authoremail)"
+    cmd = f"git for-each-ref --format='{format}' refs/remotes/ --sort={sortby} DESC"
+    text_lines = misc.cmd_run_get_output(cmd, splitlines=True)
+
+    # Column names we actually print
+    col_names = ["ts", "refname", "author"]
+
+    # Parse text lines into a list of dictionaries
+    lines = []
+    for line in text_lines:
+        ts, refname, author, authoremail = line.split(",")
+        ts_epoch = time.mktime(time.strptime(ts, "%Y-%m-%d %H:%M"))
+        d = {'ts': ts, 'refname': refname, 'author': author, 'email': authoremail, 'ts_epoch': ts_epoch}
+        lines.append(d)
+
+    # Compute max width of all columns across all lines
+    w = {}
+    for k in col_names:
+        w[k] = max([len(line[k]) for line in lines])
+
+    # Print the header
+    header = [f"{col:{w[col]}}" for col in col_names]
+    print("  ".join(header))
+    print("-" * sum(w.values()))
+
+    # Get my email
+    my_email = misc.cmd_run_get_output("git config user.email")
+    my_email = f"<{my_email}>"
+    now = time.time()
+
+    ts_colors = [
+        (30, f"{Ansi.cyan}"),
+        (90, f"{Ansi.cyan}{Ansi.dim}"),
+        (180, f"{Ansi.white}{Ansi.dim}"),
+        (720, f"{Ansi.blue}"),
+    ]
+
+    # Print info line for each branch
+    for line in lines:
+        # Colorize timestamp dim if older than 30 days
+        ts_color = ts_colors[-1][1]
+        for days, color in ts_colors:
+            if now - line['ts_epoch'] < days * 24 * 3600:
+                ts_color = color
+                break
+
+        # Colorize author name if it is me
+        author_color = Ansi.green if line['email'] == my_email else Ansi.white
+        columns = [
+            f"{ts_color}{line['ts']:{w['ts']}}{Ansi.reset}",
+            f"{Ansi.white}{line['refname']:{w['refname']}}",
+            f"{author_color}{line['author']:{w['author']}}",
+        ]
+        print("  ".join(columns))

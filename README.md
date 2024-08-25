@@ -23,7 +23,8 @@ Listed 5 repos
 And here is the help:
 ```
 $ misgit -h
-usage: misgit [-x DIR] [-d NUM] [-a] [-p] [-f FIELDS] [-m] [-t FORMAT] [-c BRANCH=COLOR] [--diff] [--pull] [-v] [-h]
+usage: misgit [-x DIR] [-d NUM] [-a] [-p] [-f FIELDS] [-m] [-t FORMAT] [-c BRANCH=COLOR] [--diff] [--pull] [-b]
+              [-s SORTBY][-v] [-h]
               [DIR ...]
 
 Show git summary info for all git repos below some folder (recursively)
@@ -51,6 +52,10 @@ Advanced options:
   --diff           Compare two trees (requires two DIRectory arguments)
   --pull           Pull all repos (with --rebase)
 
+Other commands/options:
+  -b               List branches of current repo with last commit date and author
+  -s SORTBY        Sort branches by 'author', 'date' or 'branch' (default is 'date')
+
 Misc options:
   -v               Be more verbose. E.g. print progress
   -h               Show this help message and exit
@@ -64,6 +69,8 @@ Examples:
     misgit -x workdir/foobaz
   List repos with specific branches colored:
     misgit -c'feat*=pink,bugfix*=ired'
+  List branches (refs) of current repo:
+    misgit -b
 
 Colors (for -c option):
     bold dim red green yellow blue magenta cyan white ired igreen iyellow iblue imagenta icyan iwhite pink

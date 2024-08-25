@@ -28,6 +28,10 @@ def main():
     if opt.diff:
         Ansi.set_no_colors()
 
+    if opt.list_branches:
+        gitops.list_branches(sortby=opt.sortby)
+        return
+
     dirargs = opt.posargs
     if not dirargs:
         dirargs = ["."]
@@ -66,6 +70,8 @@ examples = f"""Examples:
     %(prog)s -x workdir/foobaz
   List repos with specific branches colored:
     %(prog)s -c'feat*=pink,bugfix*=ired'
+  List branches (refs) of current repo:
+    %(prog)s -b
 
 Colors (for -c option):
     {Ansi.get_colors()}
@@ -114,6 +120,12 @@ The '*' name/pattern acts as default color""")
         help="Compare two trees (requires two DIRectory arguments)")
     g.add_argument('--pull', dest='pull', action='store_true', default=False,
         help="Pull all repos (with --rebase)")
+
+    g = parser.add_argument_group("Other commands/options")
+    g.add_argument('-b', dest='list_branches', action='store_true', default=False,
+        help="List branches of current repo with last commit date and author")
+    g.add_argument('-s', dest='sortby', type=str, default="date",
+        help="Sort branches by 'author', 'date' or 'branch' (default is 'date')")
 
     g = parser.add_argument_group("Misc options")
     g.add_argument('-v', dest='verbose', action='count', default=0,
